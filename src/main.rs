@@ -7,7 +7,7 @@ use chrono::{Utc, DateTime };
 
 use crate::config::Config;
 use crate::prices::PriceInformation;
-use crate::inventory::Inventories;
+use crate::inventory::Inventory;
 use crate::parser::Parser;
 
 pub struct Inflow {
@@ -28,7 +28,7 @@ pub struct Outflow {
 fn main() {
     let config = Config::new("config.yaml").unwrap();
 
-    let mut inventories = Inventories::new(
+    let mut inventories = Inventory::new(
         config.currency_precision);
     let mut price_information = PriceInformation::new(
         config.api_key.clone());
@@ -37,6 +37,6 @@ fn main() {
         &mut price_information,
         config.base_asset.clone());
 
-    parser.parse_sheet("data/Transactions.csv");
+    parser.parse_sheet("transactions.csv");
     inventories.write_log();
 }

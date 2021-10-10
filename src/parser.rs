@@ -2,23 +2,23 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize};
 
 use crate::{Inflow, Outflow};
-use crate::inventory::Inventories;
+use crate::inventory::Inventory;
 use crate::prices::PriceInformation;
 
 pub struct Parser<'a> {
-    inventories: &'a mut Inventories,
+    inventory: &'a mut Inventory,
     price_information: &'a mut PriceInformation,
     base_asset: String,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(
-        inventories: &'a mut Inventories,
+        inventory: &'a mut Inventory,
         price_information: &'a mut PriceInformation,
         base_asset: String
     ) -> Parser<'a> {
         Parser {
-            inventories,
+            inventory,
             price_information,
             base_asset,
         }
@@ -66,7 +66,7 @@ impl<'a> Parser<'a> {
         let out_amount = record.out_amount.unwrap();
         let base_value = out_amount;
         let base_price = base_value / record.in_amount;
-        self.inventories.get(&record.in_asset).deposit(Inflow {
+        self.inventory.deposit(&record.in_asset, Inflow {
             tx_id: record.tx_id,
             datetime: record.datetime,
             amount: record.in_amount,
@@ -78,14 +78,12 @@ impl<'a> Parser<'a> {
     fn parse_trade_other_to_base(&mut self, record: TransactionRecord) {
         let out_asset = record.out_asset.unwrap();
         let out_amount = record.out_amount.unwrap();
-        self.inventories
-            .get(&out_asset)
-            .withdraw(Outflow {
-                tx_id: record.tx_id,
-                datetime: record.datetime,
-                amount: out_amount,
-                proceeds: record.in_amount,
-            });
+        self.inventory.withdraw(&out_asset, Outflow {
+            tx_id: record.tx_id,
+            datetime: record.datetime,
+            amount: out_amount,
+            proceeds: record.in_amount,
+        });
     }
 
     fn parse_trade_other_to_other(&mut self, record: TransactionRecord) {
@@ -97,15 +95,13 @@ impl<'a> Parser<'a> {
             record.datetime);
         let base_value = out_base_price * out_amount;
         let in_base_price = base_value / record.in_amount;
-        self.inventories
-            .get(&out_asset)
-            .withdraw(Outflow {
-                tx_id: record.tx_id,
-                datetime: record.datetime,
-                amount: out_amount,
-                proceeds: base_value,
-            });
-        self.inventories.get(&record.in_asset).deposit(Inflow {
+        self.inventory.withdraw(&out_asset, Outflow {
+            tx_id: record.tx_id,
+            datetime: record.datetime,
+            amount: out_amount,
+            proceeds: base_value,
+        });
+        self.inventory.deposit(&record.in_asset, Inflow {
             tx_id: record.tx_id,
             datetime: record.datetime,
             amount: record.in_amount,
@@ -120,7 +116,7 @@ impl<'a> Parser<'a> {
             &self.base_asset,
             record.datetime);
 
-        self.inventories.get(&record.in_asset).deposit(Inflow {
+        self.inventory.deposit(&record.in_asset, Inflow {
             tx_id: record.tx_id,
             datetime: record.datetime,
             amount: record.in_amount,

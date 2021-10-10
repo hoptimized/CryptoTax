@@ -7,10 +7,11 @@ use crate::{Inflow, Outflow};
 
 #[derive(Debug, Serialize)]
 pub struct CashflowRecord {
-    tx_in: u32,
-    datetime_in: DateTime<Utc>,
     tx_out: Option<u32>,
     datetime_out: Option<DateTime<Utc>>,
+    tx_in: u32,
+    datetime_in: DateTime<Utc>,
+    asset: String,
     amount: f64,
     base_price: f64,
     actual_costs: f64,
@@ -19,55 +20,59 @@ pub struct CashflowRecord {
     gains_long_term: Option<f64>,
 }
 
-pub struct Inventories {
-    inventories: HashMap<String, Inventory>,
+pub struct Inventory {
+    assets: HashMap<String, SingleAssetInventory>,
+    log: Vec<CashflowRecord>,
     currency_precision: f64,
 }
 
-impl Inventories {
-    pub fn new(currency_precision: f64) -> Inventories {
-        Inventories {
-            inventories: HashMap::new(),
+impl Inventory {
+    pub fn new(currency_precision: f64) -> Inventory {
+        Inventory {
+            assets: HashMap::new(),
+            log: Vec::new(),
             currency_precision,
         }
     }
 
-    pub fn get(&mut self, asset: &str) -> &mut Inventory {
-        let inventory = self.inventories
+    pub fn deposit(&mut self, asset: &str, inflow: Inflow) {
+        let inventory = self.assets
             .entry(asset.to_string())
-            .or_insert(Inventory::new(asset.to_string(), self.currency_precision));
-        inventory
+            .or_insert(SingleAssetInventory::new(asset.to_string(), self.currency_precision));
+        inventory.deposit(inflow, &mut self.log);
+    }
+
+    pub fn withdraw(&mut self, asset: &str, outflow: Outflow) {
+        let inventory = self.assets
+            .entry(asset.to_string())
+            .or_insert(SingleAssetInventory::new(asset.to_string(), self.currency_precision));
+        inventory.withdraw(outflow, &mut self.log);
     }
 
     pub fn write_log(&self) {
-        for (asset, inventory) in self.inventories.iter() {
-            let mut writer = Writer::from_path(
-                format!("data/Assets/{}.csv", asset)).unwrap();
-            for entry in inventory.log.iter() {
-                writer.serialize(entry).unwrap();
-            }
+        let mut writer = Writer::from_path("cashflows.csv").unwrap();
+        for entry in self.log.iter() {
+            writer.serialize(entry).unwrap();
         }
     }
 }
 
-pub struct Inventory {
+struct SingleAssetInventory {
     asset: String,
     layers: VecDeque<Inflow>, //TODO: add a wrapper so that we can use FIFO and LIFO (queue, stack)
-    log: Vec<CashflowRecord>,
     currency_precision: f64
 }
 
-impl Inventory {
-    pub fn new(asset: String, currency_precision: f64) -> Inventory {
-        Inventory {
+impl SingleAssetInventory {
+    pub fn new(asset: String, currency_precision: f64) -> SingleAssetInventory {
+        SingleAssetInventory {
             asset,
             layers: VecDeque::new(),
-            log: Vec::new(),
             currency_precision
         }
     }
 
-    pub fn deposit(&mut self, inflow: Inflow) {
+    pub fn deposit(&mut self, inflow: Inflow, log_stash: &mut Vec<CashflowRecord>) {
         let gains_raw = inflow.amount * inflow.base_price - inflow.actual_costs;
 
         let gains : Option<f64>;
@@ -77,11 +82,12 @@ impl Inventory {
             gains = Some(gains_raw);
         }
 
-        self.log.push(CashflowRecord {
-            tx_in: inflow.tx_id,
-            datetime_in: inflow.datetime,
+        log_stash.push(CashflowRecord {
+            asset: self.asset.clone(),
             tx_out: None,
             datetime_out: None,
+            tx_in: inflow.tx_id,
+            datetime_in: inflow.datetime,
             amount: inflow.amount,
             base_price: inflow.base_price,
             actual_costs: inflow.actual_costs,
@@ -92,7 +98,7 @@ impl Inventory {
         self.layers.push_back(inflow);
     }
 
-    pub fn withdraw(&mut self, outflow: Outflow) {
+    pub fn withdraw(&mut self, outflow: Outflow, log_stash: &mut Vec<CashflowRecord>) {
         let mut remaining = outflow.amount;
         while let Some(layer) = self.layers.front_mut() {
             // calculate gains
@@ -108,10 +114,11 @@ impl Inventory {
 
             // prepare log record
             let mut log = CashflowRecord {
-                tx_in: layer.tx_id,
-                datetime_in: layer.datetime,
+                asset: self.asset.to_string(),
                 tx_out: Some(outflow.tx_id),
                 datetime_out: Some(outflow.datetime),
+                tx_in: layer.tx_id,
+                datetime_in: layer.datetime,
                 amount: -amount,
                 base_price: layer.base_price,
                 actual_costs: costs,
@@ -129,7 +136,7 @@ impl Inventory {
             }
 
             // submit log entry
-            self.log.push(log);
+            log_stash.push(log);
 
             // subtract amount from layer, remove layer if empty
             layer.amount -= amount;
