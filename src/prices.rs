@@ -5,6 +5,8 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::error;
 use std::fs::File;
 
+const CACHE_FILE_PATH: &str = ".price_cache";
+
 #[derive(Deserialize, Debug)]
 pub struct ExchangeRateRecord {
     time : DateTime<Utc>,
@@ -82,7 +84,7 @@ impl PriceInformation {
     fn load(&mut self) -> Result<(), Box<dyn error::Error>> {
         self.clear();
 
-        let file = std::fs::File::open(".price_cache")?;
+        let file = std::fs::File::open(CACHE_FILE_PATH)?;
         let data = ::serde_yaml::from_reader(file)?;
         self.price_cache = data;
 
@@ -91,7 +93,7 @@ impl PriceInformation {
 
     fn save(&self) -> Result<(), Box<dyn error::Error>> {
         ::serde_yaml::to_writer(
-            &File::create(".price_cache")?,
+            &File::create(CACHE_FILE_PATH)?,
             &self.price_cache)?;
         Ok(())
     }

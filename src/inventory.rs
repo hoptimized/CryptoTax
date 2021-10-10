@@ -61,8 +61,8 @@ impl Inventory {
         inventory.withdraw(outflow, &mut self.log);
     }
 
-    pub fn write_log(&self) {
-        let mut writer = Writer::from_path("cashflows.csv").unwrap();
+    pub fn write_log(&self, path: &str) {
+        let mut writer = Writer::from_path(path.to_string()).unwrap();
         for entry in self.log.iter() {
             writer.serialize(entry).unwrap();
         }
