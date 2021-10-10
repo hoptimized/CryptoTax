@@ -1,0 +1,5 @@
+---
+  base_asset: "EUR"
+  currency_precision: 0.00000001
+  api_key:
+    coinapi: "73034021-THIS-IS-SAMPLE-KEY"
