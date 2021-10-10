@@ -50,7 +50,6 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "csv",
- "once_cell",
  "reqwest",
  "serde",
  "serde_yaml",

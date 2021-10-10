@@ -3,7 +3,7 @@ use chrono::{DateTime, Utc};
 use csv::Writer;
 use serde::{Serialize};
 
-use crate::{CONFIG, Inflow, Outflow};
+use crate::{Inflow, Outflow};
 
 #[derive(Debug, Serialize)]
 pub struct CashflowRecord {
@@ -21,19 +21,21 @@ pub struct CashflowRecord {
 
 pub struct Inventories {
     inventories: HashMap<String, Inventory>,
+    currency_precision: f64,
 }
 
 impl Inventories {
-    pub fn new() -> Inventories {
+    pub fn new(currency_precision: f64) -> Inventories {
         Inventories {
             inventories: HashMap::new(),
+            currency_precision,
         }
     }
 
     pub fn get(&mut self, asset: &str) -> &mut Inventory {
         let inventory = self.inventories
             .entry(asset.to_string())
-            .or_insert(Inventory::new(asset.to_string()));
+            .or_insert(Inventory::new(asset.to_string(), self.currency_precision));
         inventory
     }
 
@@ -52,14 +54,16 @@ pub struct Inventory {
     asset: String,
     layers: VecDeque<Inflow>, //TODO: add a wrapper so that we can use FIFO and LIFO (queue, stack)
     log: Vec<CashflowRecord>,
+    currency_precision: f64
 }
 
 impl Inventory {
-    pub fn new(asset: String) -> Inventory {
+    pub fn new(asset: String, currency_precision: f64) -> Inventory {
         Inventory {
             asset,
             layers: VecDeque::new(),
             log: Vec::new(),
+            currency_precision
         }
     }
 
@@ -67,7 +71,7 @@ impl Inventory {
         let gains_raw = inflow.amount * inflow.base_price - inflow.actual_costs;
 
         let gains : Option<f64>;
-        if gains_raw < CONFIG.currency_precision {
+        if gains_raw < self.currency_precision {
             gains = None;
         } else {
             gains = Some(gains_raw);
@@ -95,7 +99,7 @@ impl Inventory {
             let amount = remaining.min(layer.amount);
             let costs = layer.base_price * amount;
             let proceeds;
-            if outflow.amount > CONFIG.currency_precision {
+            if outflow.amount > self.currency_precision {
                 proceeds = outflow.proceeds / outflow.amount * amount;
             } else {
                 proceeds = outflow.proceeds
@@ -129,18 +133,18 @@ impl Inventory {
 
             // subtract amount from layer, remove layer if empty
             layer.amount -= amount;
-            if layer.amount < CONFIG.currency_precision {
+            if layer.amount < self.currency_precision {
                 self.layers.pop_front();
             }
 
             // subtract from remaining amount, exit if none left
             remaining -= amount;
-            if remaining <= CONFIG.currency_precision {
+            if remaining <= self.currency_precision {
                 break;
             }
         }
 
-        if remaining > CONFIG.currency_precision {
+        if remaining > self.currency_precision {
             panic!("insufficient funds");
         };
     }

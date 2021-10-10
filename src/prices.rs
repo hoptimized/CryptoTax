@@ -5,8 +5,6 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::error;
 use std::fs::File;
 
-use crate::CONFIG;
-
 #[derive(Deserialize, Debug)]
 pub struct ExchangeRateRecord {
     time : DateTime<Utc>,
@@ -16,13 +14,15 @@ pub struct ExchangeRateRecord {
 }
 
 pub struct PriceInformation {
-    price_cache : HashMap<String, HashMap<DateTime<Utc>, f64>>
+    price_cache : HashMap<String, HashMap<DateTime<Utc>, f64>>,
+    api_keys : HashMap<String, String>,
 }
 
 impl PriceInformation {
-    pub fn new() -> PriceInformation {
+    pub fn new(api_keys : HashMap<String, String>) -> PriceInformation {
         let mut res = PriceInformation {
             price_cache: HashMap::new(),
+            api_keys
         };
         res.load().expect("Cannot load price cache!");
         res
@@ -32,9 +32,14 @@ impl PriceInformation {
         self.price_cache.clear();
     }
 
-    pub fn get(&mut self, asset: &str, datetime: DateTime<Utc>) -> f64 {
+    pub fn get(
+        &mut self,
+        asset_id_base: &str,
+        asset_id_quote: &str,
+        datetime: DateTime<Utc>
+    ) -> f64 {
         let prices_for_asset = self.price_cache
-            .entry(asset.to_string())
+            .entry(asset_id_base.to_string())
             .or_insert(HashMap::new());
 
         let entry = prices_for_asset.entry(datetime.clone());
@@ -47,12 +52,12 @@ impl PriceInformation {
         // prepare API call to retrieve price
         let url = format!(
             "https://rest.coinapi.io/v1/exchangerate/{asset_id_base}/{asset_id_quote}?time={time}",
-            asset_id_base = asset,
-            asset_id_quote = "EUR",
+            asset_id_base = asset_id_base,
+            asset_id_quote = asset_id_quote,
             time = datetime.to_rfc3339_opts(SecondsFormat::Secs, true));
 
         if let Vacant(entry) = entry {
-            let api_key = CONFIG.api_key
+            let api_key = self.api_keys
                 .get("coinapi")
                 .expect("Currently only supporting CoinAPI");
 

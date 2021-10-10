@@ -1,23 +1,26 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize};
 
-use crate::{CONFIG, Inflow, Outflow};
+use crate::{Inflow, Outflow};
 use crate::inventory::Inventories;
 use crate::prices::PriceInformation;
 
 pub struct Parser<'a> {
     inventories: &'a mut Inventories,
     price_information: &'a mut PriceInformation,
+    base_asset: String,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(
         inventories: &'a mut Inventories,
-        price_information: &'a mut PriceInformation
+        price_information: &'a mut PriceInformation,
+        base_asset: String
     ) -> Parser<'a> {
         Parser {
             inventories,
-            price_information
+            price_information,
+            base_asset,
         }
     }
 
@@ -41,9 +44,9 @@ impl<'a> Parser<'a> {
             "Trade" => {
                 let out_asset = row.out_asset.clone().unwrap();
                 if row.in_asset != out_asset {
-                    if out_asset == CONFIG.base_asset && row.in_asset != CONFIG.base_asset {
+                    if out_asset == self.base_asset && row.in_asset != self.base_asset {
                         self.parse_trade_base_to_other(row);
-                    } else if out_asset != CONFIG.base_asset && row.in_asset == CONFIG.base_asset {
+                    } else if out_asset != self.base_asset && row.in_asset == self.base_asset {
                         self.parse_trade_other_to_base(row);
                     } else {
                         self.parse_trade_other_to_other(row);
@@ -88,7 +91,10 @@ impl<'a> Parser<'a> {
     fn parse_trade_other_to_other(&mut self, record: TransactionRecord) {
         let out_asset = record.out_asset.unwrap();
         let out_amount = record.out_amount.unwrap();
-        let out_base_price = self.price_information.get(&out_asset, record.datetime);
+        let out_base_price = self.price_information.get(
+            &out_asset,
+            &self.base_asset,
+            record.datetime);
         let base_value = out_base_price * out_amount;
         let in_base_price = base_value / record.in_amount;
         self.inventories
@@ -111,6 +117,7 @@ impl<'a> Parser<'a> {
     fn parse_staking_reward(&mut self, record: TransactionRecord) {
         let reward_base_price = self.price_information.get(
             record.in_asset.as_str(),
+            &self.base_asset,
             record.datetime);
 
         self.inventories.get(&record.in_asset).deposit(Inflow {

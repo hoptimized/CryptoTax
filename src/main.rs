@@ -4,7 +4,6 @@ mod inventory;
 mod parser;
 
 use chrono::{Utc, DateTime };
-use once_cell::sync::Lazy;
 
 use crate::config::Config;
 use crate::prices::PriceInformation;
@@ -26,17 +25,17 @@ pub struct Outflow {
     proceeds: f64,
 }
 
-pub static CONFIG: Lazy<Config> = Lazy::new(|| {
-    let config = Config::new("config.yaml").unwrap();
-    config
-});
-
 fn main() {
-    println!("Starting tax calculator for base currency {}", CONFIG.base_asset);
+    let config = Config::new("config.yaml").unwrap();
 
-    let mut inventories = Inventories::new();
-    let mut price_information : PriceInformation = PriceInformation::new();
-    let mut parser = Parser::new(&mut inventories, &mut price_information);
+    let mut inventories = Inventories::new(
+        config.currency_precision);
+    let mut price_information = PriceInformation::new(
+        config.api_key.clone());
+    let mut parser = Parser::new(
+        &mut inventories,
+        &mut price_information,
+        config.base_asset.clone());
 
     parser.parse_sheet("data/Transactions.csv");
     inventories.write_log();
