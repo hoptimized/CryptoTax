@@ -29,6 +29,7 @@ fn main() {
     let config = Config::new("config.yaml").unwrap();
 
     let mut inventories = Inventory::new(
+        config.method,
         config.currency_precision);
     let mut price_information = PriceInformation::new(
         config.api_key.clone());

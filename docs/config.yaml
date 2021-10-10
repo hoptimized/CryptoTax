@@ -1,5 +1,6 @@
 ---
   base_asset: "EUR"
+  method: "FIFO"
   currency_precision: 0.00000001
   api_key:
     coinapi: "73034021-THIS-IS-SAMPLE-KEY"

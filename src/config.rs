@@ -1,12 +1,19 @@
 use std::collections::HashMap;
 use std::error;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
-    pub(crate) base_asset: String,
-    pub(crate) currency_precision: f64,
-    pub(crate) api_key: HashMap<String, String>,
+    pub base_asset: String,
+    pub method: AccountingMethod,
+    pub currency_precision: f64,
+    pub api_key: HashMap<String, String>,
+}
+
+#[derive(Copy, Clone, Debug, Deserialize)]
+pub enum AccountingMethod {
+    FIFO,
+    LIFO,
 }
 
 impl Config {

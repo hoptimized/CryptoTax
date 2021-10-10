@@ -4,6 +4,7 @@ use csv::Writer;
 use serde::{Serialize};
 
 use crate::{Inflow, Outflow};
+use crate::config::AccountingMethod;
 
 #[derive(Debug, Serialize)]
 pub struct CashflowRecord {
@@ -23,14 +24,19 @@ pub struct CashflowRecord {
 pub struct Inventory {
     assets: HashMap<String, SingleAssetInventory>,
     log: Vec<CashflowRecord>,
+    accounting_method: AccountingMethod,
     currency_precision: f64,
 }
 
 impl Inventory {
-    pub fn new(currency_precision: f64) -> Inventory {
+    pub fn new(
+        accounting_method: AccountingMethod,
+        currency_precision: f64
+    ) -> Inventory {
         Inventory {
             assets: HashMap::new(),
             log: Vec::new(),
+            accounting_method,
             currency_precision,
         }
     }
@@ -38,14 +44,20 @@ impl Inventory {
     pub fn deposit(&mut self, asset: &str, inflow: Inflow) {
         let inventory = self.assets
             .entry(asset.to_string())
-            .or_insert(SingleAssetInventory::new(asset.to_string(), self.currency_precision));
+            .or_insert(SingleAssetInventory::new(
+                asset.to_string(),
+                self.accounting_method.clone(),
+                self.currency_precision));
         inventory.deposit(inflow, &mut self.log);
     }
 
     pub fn withdraw(&mut self, asset: &str, outflow: Outflow) {
         let inventory = self.assets
             .entry(asset.to_string())
-            .or_insert(SingleAssetInventory::new(asset.to_string(), self.currency_precision));
+            .or_insert(SingleAssetInventory::new(
+                asset.to_string(),
+                self.accounting_method.clone(),
+                self.currency_precision));
         inventory.withdraw(outflow, &mut self.log);
     }
 
@@ -59,22 +71,28 @@ impl Inventory {
 
 struct SingleAssetInventory {
     asset: String,
-    layers: VecDeque<Inflow>, //TODO: add a wrapper so that we can use FIFO and LIFO (queue, stack)
+    layers: VecDeque<Inflow>,
+    accounting_method: AccountingMethod,
     currency_precision: f64
 }
 
 impl SingleAssetInventory {
-    pub fn new(asset: String, currency_precision: f64) -> SingleAssetInventory {
+    pub fn new(
+        asset: String,
+        accounting_method: AccountingMethod,
+        currency_precision: f64
+    ) -> SingleAssetInventory {
         SingleAssetInventory {
             asset,
             layers: VecDeque::new(),
-            currency_precision
+            accounting_method,
+            currency_precision,
         }
     }
 
     pub fn deposit(&mut self, inflow: Inflow, log_stash: &mut Vec<CashflowRecord>) {
+        // calculate gains
         let gains_raw = inflow.amount * inflow.base_price - inflow.actual_costs;
-
         let gains : Option<f64>;
         if gains_raw < self.currency_precision {
             gains = None;
@@ -82,6 +100,7 @@ impl SingleAssetInventory {
             gains = Some(gains_raw);
         }
 
+        // submit log entry
         log_stash.push(CashflowRecord {
             asset: self.asset.clone(),
             tx_out: None,
@@ -95,7 +114,12 @@ impl SingleAssetInventory {
             gains_short_term: gains,
             gains_long_term: None,
         });
-        self.layers.push_back(inflow);
+
+        // add layer to inventory
+        match self.accounting_method {
+            AccountingMethod::FIFO => self.layers.push_back(inflow),
+            AccountingMethod::LIFO => self.layers.push_front(inflow),
+        };
     }
 
     pub fn withdraw(&mut self, outflow: Outflow, log_stash: &mut Vec<CashflowRecord>) {
