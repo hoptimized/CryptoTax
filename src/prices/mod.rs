@@ -75,6 +75,9 @@ impl PriceInformation {
 
             entry.insert(price);
 
+            // TODO: remove this save once the app becomes more stable
+            self.save().expect("Could not save price cache!");
+
             return price;
         }
 

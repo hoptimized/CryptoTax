@@ -2,18 +2,14 @@ use std::collections::HashMap;
 use std::error;
 use serde::{Deserialize};
 
+use crate::accounting::AccountingMethod;
+
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub base_asset: String,
     pub method: AccountingMethod,
     pub currency_precision: f64,
     pub api_key: HashMap<String, String>,
-}
-
-#[derive(Copy, Clone, Debug, Deserialize)]
-pub enum AccountingMethod {
-    FIFO,
-    LIFO,
 }
 
 impl Config {
