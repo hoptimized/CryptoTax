@@ -3,7 +3,7 @@ mod inventory;
 use std::collections::HashMap;
 
 use crate::prices::PriceInformation;
-use crate::accounting::{AccountingMethod, CashflowRecord, Inflow, Outflow, TransactionRecord};
+use crate::accounting::{AccountingMethod, CashflowRecord, Purchase, InventoryChange, Sale, TransactionRecord};
 use crate::accounting::calculation::inventory::Inventory;
 
 pub fn calculate_capital_gains<'a>(
@@ -101,7 +101,7 @@ impl<'a> CapitalGainsCalculation<'a> {
 
         // record the inflow of the other asset;
         // skip recording the base asset, because it is neutral on gains
-        self.deposit(&record.in_asset, Inflow {
+        self.process_purchase(&record.in_asset, Purchase {
             tx_id: record.tx_id,
             datetime: record.datetime,
             amount: record.in_amount,
@@ -122,7 +122,7 @@ impl<'a> CapitalGainsCalculation<'a> {
 
         // record the outflow of the other asset;
         // skip recording the base asset, because it is neutral on gains
-        self.withdraw(&out_asset, Outflow {
+        self.process_sale(&out_asset, Sale {
             tx_id: record.tx_id,
             datetime: record.datetime,
             amount: out_amount,
@@ -139,37 +139,38 @@ impl<'a> CapitalGainsCalculation<'a> {
         //  1) sell other asset for base asset, at market price
         //  2) sell base asset for the target asset
 
-        // unwrap optional parameters
-        let out_asset = record.out_asset.unwrap();
+        let out_asset = record.out_asset.clone().unwrap();
         let out_amount = record.out_amount.unwrap();
 
-        // query market price for the asset that we'd like to dispose of
+         // query market price for the asset that we'd like to dispose of
         let out_base_price = self.price_information.get(
             &out_asset,
             &self.base_asset,
             record.datetime);
 
         // calculate value (in base asset terms) of the transaction
-        let base_value = out_base_price * out_amount;
-
-        // calculate price of the asset that we receive, against base asset
-        let in_base_price = base_value / record.in_amount;
+        let out_base_value = out_base_price * out_amount;
 
         // record the outflow of the disposed asset
-        self.withdraw(&out_asset, Outflow {
-            tx_id: record.tx_id,
-            datetime: record.datetime,
-            amount: out_amount,
-            proceeds: base_value,
+        self.process_trade_other_to_base(TransactionRecord {
+            out_asset: record.out_asset.clone(),
+            out_amount: record.out_amount,
+            in_asset: self.base_asset.to_string(),
+            in_amount: out_base_value,
+            fee_asset: None, // TODO: add fees
+            fee_amount: None, // TODO: add fees
+            ..record.clone()
         });
 
         // record the inflow of the received asset
-        self.deposit(&record.in_asset, Inflow {
-            tx_id: record.tx_id,
-            datetime: record.datetime,
-            amount: record.in_amount,
-            base_price: in_base_price,
-            actual_costs: in_base_price * record.in_amount,
+        self.process_trade_base_to_other(TransactionRecord {
+            out_asset: Some(self.base_asset.to_string()),
+            out_amount: Some(out_base_value),
+            in_asset: record.in_asset.clone(),
+            in_amount: record.in_amount,
+            fee_asset: None, // TODO: add fees
+            fee_amount: None, // TODO: add fees
+            ..record.clone()
         });
     }
 
@@ -187,7 +188,7 @@ impl<'a> CapitalGainsCalculation<'a> {
             record.datetime);
 
         // record the inflow
-        self.deposit(&record.in_asset, Inflow {
+        self.process_purchase(&record.in_asset, Purchase {
             tx_id: record.tx_id,
             datetime: record.datetime,
             amount: record.in_amount,
@@ -196,25 +197,85 @@ impl<'a> CapitalGainsCalculation<'a> {
         });
     }
 
-    pub fn deposit(&mut self, asset: &str, inflow: Inflow) {
+    pub fn process_purchase(&mut self, asset: &str, purchase: Purchase) {
         let inventory = self.assets
             .entry(asset.to_string())
             .or_insert(Inventory::new(
-                asset.to_string(),
                 self.accounting_method.clone(),
                 self.currency_precision));
-        let log_entry = inventory.deposit(inflow);
-        self.log.push(log_entry);
+
+        // deposit asset
+        inventory.deposit(InventoryChange {
+            tx_id: purchase.tx_id,
+            datetime: purchase.datetime,
+            amount: purchase.amount,
+            base_price: purchase.base_price,
+        });
+
+        // calculate possible gains from discounts / gifts / staking rewards etc.
+        let gains_raw = purchase.amount * purchase.base_price - purchase.actual_costs;
+        let gains : Option<f64> = match gains_raw >= self.currency_precision {
+            true => Some(gains_raw),
+            false => None,
+        };
+
+        // create log entry
+        self.log.push(CashflowRecord {
+            asset: asset.to_string(),
+            tx_out: None,
+            datetime_out: None,
+            tx_in: purchase.tx_id,
+            datetime_in: purchase.datetime,
+            amount: purchase.amount,
+            base_price: purchase.base_price,
+            actual_costs: purchase.actual_costs,
+            actual_proceeds: None,
+            gains_short_term: gains,
+            gains_long_term: None,
+        });
     }
 
-    pub fn withdraw(&mut self, asset: &str, outflow: Outflow) {
+    pub fn process_sale(&mut self, asset: &str, sale: Sale) {
         let inventory = self.assets
             .entry(asset.to_string())
             .or_insert(Inventory::new(
-                asset.to_string(),
                 self.accounting_method.clone(),
                 self.currency_precision));
-        let mut log_entries = inventory.withdraw(outflow);
-        self.log.append(&mut log_entries);
+
+        // withdraw asset from inventory
+        let outflows = inventory.withdraw(sale.amount);
+
+        for outflow in outflows {
+            let costs = outflow.base_price * outflow.amount;
+
+            // calculate proceeds proportional to the amount that we are taking from the layer;
+            // if we are taking close to zero, put all proceeds on this layer
+            let proceeds = match sale.amount >= self.currency_precision {
+                true => sale.proceeds / sale.amount * outflow.amount,
+                false => sale.proceeds,
+            };
+
+            // calculate gains
+            let gains = proceeds - costs;
+
+            // calculate holding duration
+            let duration = sale.datetime.signed_duration_since(outflow.datetime).num_days();
+            let is_longterm = duration > 365;
+
+            // submit log entry
+            self.log.push(CashflowRecord {
+                asset: asset.to_string(),
+                tx_out: Some(sale.tx_id),
+                datetime_out: Some(sale.datetime),
+                tx_in: outflow.tx_id,
+                datetime_in: outflow.datetime,
+                amount: -outflow.amount,
+                base_price: outflow.base_price,
+                actual_costs: costs,
+                actual_proceeds: Some(proceeds),
+                gains_short_term: if is_longterm { None } else { Some(gains) },
+                gains_long_term: if is_longterm { Some(gains) } else { None },
+            });
+        }
     }
 }

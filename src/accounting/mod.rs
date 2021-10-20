@@ -5,7 +5,7 @@ mod calculation;
 use chrono::{DateTime, Utc};
 use serde::{Serialize,Deserialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct TransactionRecord {
     tx_id: u32,
     datetime: DateTime<Utc>,
@@ -40,7 +40,8 @@ pub enum AccountingMethod {
     LIFO,
 }
 
-pub struct Inflow {
+#[derive(Copy, Clone)]
+pub struct Purchase {
     tx_id: u32,
     datetime: DateTime<Utc>,
     amount: f64,
@@ -48,9 +49,18 @@ pub struct Inflow {
     actual_costs: f64,
 }
 
-pub struct Outflow {
+#[derive(Copy, Clone)]
+pub struct Sale {
     tx_id: u32,
     datetime: DateTime<Utc>,
     amount: f64,
     proceeds: f64,
+}
+
+#[derive(Copy, Clone)]
+pub struct InventoryChange {
+    tx_id: u32,
+    datetime: DateTime<Utc>,
+    amount: f64,
+    base_price: f64,
 }
