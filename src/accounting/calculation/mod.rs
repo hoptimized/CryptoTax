@@ -30,8 +30,9 @@ pub fn calculate_capital_gains<'a>(
         .skip(1)
         .enumerate();
 
-    for (_, record) in records
+    for (i, record) in records
     {
+        println!("Processing record #{}", i + 1);
         calculation.process_record(record.unwrap());
     }
 

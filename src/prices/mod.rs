@@ -51,14 +51,23 @@ impl PriceInformation {
             return entry.get().clone();
         }
 
+        let datetime = datetime.to_rfc3339_opts(SecondsFormat::Secs, true);
+
         // prepare API call to retrieve price
         let url = format!(
             "https://rest.coinapi.io/v1/exchangerate/{asset_id_base}/{asset_id_quote}?time={time}",
             asset_id_base = asset_id_base,
             asset_id_quote = asset_id_quote,
-            time = datetime.to_rfc3339_opts(SecondsFormat::Secs, true));
+            time = datetime);
 
         if let Vacant(entry) = entry {
+            println!(
+                "--- running price query: {}/{}, {}",
+                asset_id_base,
+                asset_id_quote,
+                datetime,
+            );
+
             let api_key = self.api_keys
                 .get("coinapi")
                 .expect("Currently only supporting CoinAPI");
@@ -68,10 +77,19 @@ impl PriceInformation {
                 .header("X-CoinAPI-Key", api_key)
                 .send()
                 .unwrap();
-            let response : ExchangeRateRecord = response
+            let remaining_api_calls = String::from(response
+                .headers()
+                .get("x-ratelimit-remaining")
+                .unwrap()
+                .to_str()
+                .unwrap());
+            let response_body : ExchangeRateRecord = response
                 .json()
                 .unwrap();
-            let price = response.rate;
+            let price = response_body.rate;
+
+            println!("--- success: price = {}",  price);
+            println!("--- {} API calls left", remaining_api_calls);
 
             entry.insert(price);
 
