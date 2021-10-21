@@ -3,7 +3,7 @@ mod inventory;
 use std::collections::HashMap;
 
 use crate::prices::PriceInformation;
-use crate::accounting::{AccountingMethod, CashflowRecord, Purchase, InventoryChange, Sale, TransactionRecord};
+use crate::accounting::{AccountingMethod, CashflowRecord, Purchase, InventoryChange, Sale, TransactionRecord, Withdrawal};
 use crate::accounting::calculation::inventory::Inventory;
 
 pub fn calculate_capital_gains<'a>(
@@ -70,12 +70,10 @@ impl<'a> CapitalGainsCalculation<'a> {
             "Trade" => {
                 let out_asset = row.out_asset.clone().unwrap();
                 if row.in_asset != out_asset {
-                    if out_asset == self.base_asset && row.in_asset != self.base_asset {
-                        self.process_trade_base_to_other(row);
-                    } else if out_asset != self.base_asset && row.in_asset == self.base_asset {
-                        self.process_trade_other_to_base(row);
+                    if out_asset == self.base_asset || row.in_asset == self.base_asset {
+                        self.process_trade_simple(row);
                     } else {
-                        self.process_trade_other_to_other(row);
+                        self.process_trade_foreign_to_foreign(row);
                     }
                 }
             },
@@ -88,58 +86,79 @@ impl<'a> CapitalGainsCalculation<'a> {
         };
     }
 
-    fn process_trade_base_to_other(
+    fn process_trade_simple(
         &mut self,
         record: TransactionRecord
     ) {
-        // selling the base asset to receive another asset;
-        // thus, the base asset's amount (out_amount) defines the base_value
-        // of the transaction
+        // a simple trade involves the base asset; it constitutes either:
+        //  A) a FOREX purchase (base to foreign)
+        //  B) a FOREX sale (foreign to base)
 
-        let out_amount = record.out_amount.unwrap();
-        let base_value = out_amount;
-        let base_price = base_value / record.in_amount;
-
-        // record the inflow of the other asset;
-        // skip recording the base asset, because it is neutral on gains
-        self.process_purchase(&record.in_asset, Purchase {
-            tx_id: record.tx_id,
-            datetime: record.datetime,
-            amount: record.in_amount,
-            base_price,
-            actual_costs: base_price * record.in_amount
-        });
-    }
-
-    fn process_trade_other_to_base(
-        &mut self,
-        record: TransactionRecord
-    ) {
-        // selling another asset in exchange for the base asset;
-        // thus, the base asset's amount (in_amount) is the proceeds
-
+        // extract trade parameters
         let out_asset = record.out_asset.unwrap();
-        let out_amount = record.out_amount.unwrap();
+        let in_asset = record.in_asset;
+        let mut out_amount = record.out_amount.unwrap();
+        let mut in_amount = record.in_amount;
 
-        // record the outflow of the other asset;
-        // skip recording the base asset, because it is neutral on gains
-        self.process_sale(&out_asset, Sale {
-            tx_id: record.tx_id,
-            datetime: record.datetime,
-            amount: out_amount,
-            proceeds: record.in_amount,
-        });
+        // trade must involve the base asset and one foreign asset
+        if (in_asset != self.base_asset && out_asset != self.base_asset)
+            || (in_asset == out_asset)
+        {
+            return;
+        }
+
+        // calculate fees, if any
+        if let (Some(fee_asset), Some(fee_amount)) = (record.fee_asset, record.fee_amount) {
+            if fee_asset == out_asset {
+                // add fees to expenses
+                out_amount += fee_amount;
+            } else if fee_asset == in_asset {
+                // deduct fees from proceeds
+                in_amount -= fee_amount;
+            } else {
+                // convert fee into base asset and attribute to base_asset
+                let fee_base_value = self.process_withdrawal(&fee_asset, Withdrawal {
+                    tx_id: record.tx_id,
+                    datetime: record.datetime,
+                    amount: fee_amount,
+                });
+                if out_asset == self.base_asset {
+                    out_amount += fee_base_value;
+                } else if in_asset == self.base_asset {
+                    in_amount -= fee_base_value;
+                }
+            }
+        }
+
+        // process the purchase / sale
+        if out_asset == self.base_asset {
+            self.process_purchase(&in_asset, Purchase {
+                tx_id: record.tx_id,
+                datetime: record.datetime,
+                amount: in_amount,
+                base_price: out_amount / in_amount,
+                actual_costs: out_amount,
+            });
+        } else if in_asset == self.base_asset {
+            self.process_sale(&out_asset, Sale {
+                tx_id: record.tx_id,
+                datetime: record.datetime,
+                amount: out_amount,
+                proceeds: in_amount,
+            });
+        }
     }
 
-    fn process_trade_other_to_other(
+    fn process_trade_foreign_to_foreign(
         &mut self,
         record: TransactionRecord
     ) {
-        // sell another asset to receive another asset;
+        // sell a foreign asset to receive a foreign asset;
         // we need to split this up into two transactions:
-        //  1) sell other asset for base asset, at market price
-        //  2) sell base asset for the target asset
+        //  1) sell foreign asset for base asset, at market price
+        //  2) sell base asset for the other foreign asset
 
+        // unwrap out asset
         let out_asset = record.out_asset.clone().unwrap();
         let out_amount = record.out_amount.unwrap();
 
@@ -149,28 +168,35 @@ impl<'a> CapitalGainsCalculation<'a> {
             &self.base_asset,
             record.datetime);
 
-        // calculate value (in base asset terms) of the transaction
+        // calculate value (in base asset terms) of the transaction, net of fees
         let out_base_value = out_base_price * out_amount;
 
-        // record the outflow of the disposed asset
-        self.process_trade_other_to_base(TransactionRecord {
+        // distribute fees, if any
+        let mut partial_fee_amount = None;
+        if let (Some(_), Some(fee_amount)) = (record.fee_asset.clone(), record.fee_amount) {
+            // split fee evenly
+            partial_fee_amount = Some(fee_amount / 2f64);
+        }
+
+        // sell out_asset for base_asset
+        self.process_trade_simple(TransactionRecord {
             out_asset: record.out_asset.clone(),
             out_amount: record.out_amount,
             in_asset: self.base_asset.to_string(),
             in_amount: out_base_value,
-            fee_asset: None, // TODO: add fees
-            fee_amount: None, // TODO: add fees
+            fee_asset: record.fee_asset.clone(),
+            fee_amount: partial_fee_amount,
             ..record.clone()
         });
 
-        // record the inflow of the received asset
-        self.process_trade_base_to_other(TransactionRecord {
+        // buy in_asset with base_asset
+        self.process_trade_simple(TransactionRecord {
             out_asset: Some(self.base_asset.to_string()),
             out_amount: Some(out_base_value),
             in_asset: record.in_asset.clone(),
             in_amount: record.in_amount,
-            fee_asset: None, // TODO: add fees
-            fee_amount: None, // TODO: add fees
+            fee_asset: record.fee_asset.clone(),
+            fee_amount: partial_fee_amount,
             ..record.clone()
         });
     }
@@ -246,6 +272,7 @@ impl<'a> CapitalGainsCalculation<'a> {
         // withdraw asset from inventory
         let outflows = inventory.withdraw(sale.amount);
 
+        // loop through outflows
         for outflow in outflows {
             let costs = outflow.base_price * outflow.amount;
 
@@ -274,9 +301,48 @@ impl<'a> CapitalGainsCalculation<'a> {
                 base_price: outflow.base_price,
                 actual_costs: costs,
                 actual_proceeds: Some(proceeds),
-                gains_short_term: if is_longterm { None } else { Some(gains) },
-                gains_long_term: if is_longterm { Some(gains) } else { None },
+                gains_short_term: if is_longterm {None} else {Some(gains)},
+                gains_long_term: if is_longterm {Some(gains)} else {None},
             });
         }
+    }
+
+    fn process_withdrawal(&mut self, asset: &str, withdrawal: Withdrawal) -> f64 {
+        // gain-neutral withdrawal of assets from inventory;
+        // primarily used to withdraw assets to pay for fees
+
+        // find the correct inventory
+        let inventory = self.assets
+            .entry(asset.to_string())
+            .or_insert(Inventory::new(
+                self.accounting_method.clone(),
+                self.currency_precision));
+
+        // withdraw asset from inventory
+        let outflows = inventory.withdraw(withdrawal.amount);
+
+        // loop through outflows; generate logs and calculate total costs
+        let mut total_costs = 0f64;
+        for outflow in outflows {
+            let costs = outflow.amount * outflow.base_price;
+            total_costs += costs;
+
+            // submit log entry
+            self.log.push(CashflowRecord {
+                asset: asset.to_string(),
+                tx_out: Some(withdrawal.tx_id),
+                datetime_out: Some(withdrawal.datetime),
+                tx_in: outflow.tx_id,
+                datetime_in: outflow.datetime,
+                amount: -outflow.amount,
+                base_price: outflow.base_price,
+                actual_costs: costs,
+                actual_proceeds: Some(costs),
+                gains_short_term: None,
+                gains_long_term: None,
+            });
+        }
+
+        total_costs
     }
 }

@@ -64,3 +64,10 @@ pub struct InventoryChange {
     amount: f64,
     base_price: f64,
 }
+
+#[derive(Copy, Clone)]
+pub struct Withdrawal {
+    tx_id: u32,
+    datetime: DateTime<Utc>,
+    amount: f64,
+}
