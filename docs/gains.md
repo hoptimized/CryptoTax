@@ -128,19 +128,19 @@ and purchase and sale rules apply recursively.
 > Purchase 3 IOTA for 2 ADA (market price: 2.00 EUR/ADA), 
 > pay 0.001 BNB in fees
 > 1) record sale of 2 ADA for 4.00 EUR, with 0.0005 BNB in fees
->   * withdraw 0.0005 BNB from inventory, at FIFO/LIFO price
->   * in this example, 0.0005 BNB = 0.05 EUR
->   * decrease received amount by the fee: 4 EUR - 0.05 EUR = 3.95 EUR
->   * leave disposed amount unadjusted at 2 ADA
->   * record outflow of 2 ADA for 3.95 EUR
->   * record a **loss of 0.05 EUR**
+>    * withdraw 0.0005 BNB from inventory, at FIFO/LIFO price
+>    * in this example, 0.0005 BNB = 0.05 EUR
+>    * decrease received amount by the fee: 4 EUR - 0.05 EUR = 3.95 EUR
+>    * leave disposed amount unadjusted at 2 ADA
+>    * record outflow of 2 ADA for 3.95 EUR
+>    * record a **loss of 0.05 EUR**
 > 2) record purchase of 3 IOTA for 4.00 EUR, with 0.0005 BNB in fees
->   * withdraw 0.0005 BNB from inventory at FIFO/LIFO price
->   * in this example, 0.0005 BNB = 0.05 EUR
->   * increase disposed amount by the fee: 4 EUR + 0.05 EUR = 4.05 EUR
->   * leave received amount unadjusted at 2 ADA
->   * record inflow of 2 ADA for 4.05 EUR
->   * notice that the stock valuation is **0.05 EUR higher** than the net price. This will lead to a loss on sale.
+>    * withdraw 0.0005 BNB from inventory at FIFO/LIFO price
+>    * in this example, 0.0005 BNB = 0.05 EUR
+>    * increase disposed amount by the fee: 4 EUR + 0.05 EUR = 4.05 EUR
+>    * leave received amount unadjusted at 2 ADA
+>    * record inflow of 2 ADA for 4.05 EUR
+>    * notice that the stock valuation is **0.05 EUR higher** than the net price. This will lead to a loss on sale.
 >
 > Analysis:
 > * the realized loss from the sale is: 0.05 EUR
