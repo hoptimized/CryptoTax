@@ -1,0 +1,283 @@
+Processing record #1
+Processing record #2
+Processing record #3
+--- running price query: BNB/EUR, 2021-03-18T12:43:12Z
+--- success: price = 223.01685521866412
+--- 98 API calls left
+Processing record #4
+--- running price query: USDT/EUR, 2021-03-18T16:23:30Z
+--- success: price = 0.8377969550721581
+--- 99 API calls left
+Processing record #5
+--- running price query: USDT/EUR, 2021-03-18T16:48:56Z
+--- success: price = 0.8386905588345689
+--- 97 API calls left
+Processing record #6
+--- running price query: ADA/EUR, 2021-03-20T00:30:04Z
+--- success: price = 1.09822173338557
+--- 98 API calls left
+Processing record #7
+--- running price query: ADA/EUR, 2021-03-21T00:30:44Z
+--- success: price = 1.0315133907698204
+--- 97 API calls left
+Processing record #8
+--- running price query: USDT/EUR, 2021-03-21T03:53:04Z
+--- success: price = 0.8423518509272273
+--- 96 API calls left
+Processing record #9
+--- running price query: USDT/EUR, 2021-03-21T18:06:10Z
+--- success: price = 0.8423819606727782
+--- 95 API calls left
+Processing record #10
+--- running price query: USDT/EUR, 2021-03-21T18:07:36Z
+--- success: price = 0.8418190283636315
+--- 96 API calls left
+Processing record #11
+--- running price query: ADA/EUR, 2021-03-22T00:30:51Z
+--- success: price = 0.9908866608122978
+--- 98 API calls left
+Processing record #12
+--- running price query: USDT/EUR, 2021-03-22T00:49:32Z
+--- success: price = 0.8436999070013556
+--- 97 API calls left
+Processing record #13
+--- running price query: USDT/EUR, 2021-03-22T01:22:55Z
+--- success: price = 0.843729596941603
+--- 96 API calls left
+Processing record #14
+--- running price query: ADA/EUR, 2021-03-22T05:15:56Z
+--- success: price = 1.0089046814060592
+--- 95 API calls left
+Processing record #15
+--- running price query: USDT/EUR, 2021-03-22T05:29:00Z
+--- success: price = 0.8428129327594652
+--- 95 API calls left
+Processing record #16
+--- running price query: USDT/EUR, 2021-03-22T20:45:45Z
+--- success: price = 0.8411102561302701
+--- 94 API calls left
+Processing record #17
+--- running price query: TFUEL/EUR, 2021-03-22T21:22:47Z
+--- success: price = 0.33469626080065457
+--- 94 API calls left
+Processing record #18
+--- running price query: USDT/EUR, 2021-03-23T01:45:33Z
+--- success: price = 0.8405142319131068
+--- 93 API calls left
+Processing record #19
+--- running price query: ADA/EUR, 2021-03-23T01:51:26Z
+--- success: price = 0.9287972213588638
+--- 94 API calls left
+Processing record #20
+--- running price query: ADA/EUR, 2021-03-23T03:18:29Z
+--- success: price = 0.9287972213588638
+--- 93 API calls left
+Processing record #21
+--- running price query: USDT/EUR, 2021-03-23T05:19:31Z
+--- success: price = 0.8405142319131068
+--- 93 API calls left
+Processing record #22
+--- running price query: ADA/EUR, 2021-03-24T01:42:44Z
+--- success: price = 0.9420907699690246
+--- 92 API calls left
+Processing record #23
+--- running price query: USDT/EUR, 2021-03-24T01:43:41Z
+--- success: price = 0.8447039725141556
+--- 92 API calls left
+Processing record #24
+--- running price query: ADA/EUR, 2021-03-24T04:18:13Z
+--- success: price = 0.9388483005871886
+--- 91 API calls left
+Processing record #25
+--- running price query: TFUEL/EUR, 2021-03-24T19:15:57Z
+--- success: price = 0.38975555602738415
+--- 90 API calls left
+Processing record #26
+--- running price query: THETA/EUR, 2021-03-24T19:22:49Z
+--- success: price = 10.63600338400172
+--- 91 API calls left
+Processing record #27
+--- running price query: USDT/EUR, 2021-03-24T20:40:06Z
+--- success: price = 0.8478531299408629
+--- 89 API calls left
+Processing record #28
+--- running price query: ADA/EUR, 2021-03-25T00:33:06Z
+--- success: price = 0.9038202822485262
+--- 90 API calls left
+Processing record #29
+--- running price query: USDT/EUR, 2021-03-25T01:37:35Z
+--- success: price = 0.8539422296895722
+--- 92 API calls left
+Processing record #30
+--- running price query: ADA/EUR, 2021-03-25T02:53:55Z
+--- success: price = 0.9148669786236345
+--- 91 API calls left
+Processing record #31
+--- running price query: USDT/EUR, 2021-03-25T05:26:15Z
+--- success: price = 0.8479723987712783
+--- 88 API calls left
+Processing record #32
+--- running price query: ADA/EUR, 2021-03-26T00:31:34Z
+--- success: price = 0.9583069197985559
+--- 89 API calls left
+Processing record #33
+--- running price query: USDT/EUR, 2021-03-26T01:34:48Z
+--- success: price = 0.8493650743158089
+--- 90 API calls left
+Processing record #34
+--- running price query: ADA/EUR, 2021-03-26T01:59:19Z
+--- success: price = 0.950344431159456
+--- 88 API calls left
+Processing record #35
+--- running price query: TRX/EUR, 2021-03-26T15:53:15Z
+--- success: price = 0.05328108019489925
+--- 89 API calls left
+Processing record #36
+--- running price query: USDT/EUR, 2021-03-26T17:11:00Z
+--- success: price = 0.8492217746668133
+--- 89 API calls left
+Processing record #37
+--- running price query: TRX/EUR, 2021-03-26T19:44:18Z
+--- success: price = 0.053779469028221505
+--- 87 API calls left
+Processing record #38
+--- running price query: USDT/EUR, 2021-03-26T20:20:30Z
+--- success: price = 0.848738993676205
+--- 86 API calls left
+Processing record #39
+--- running price query: TRX/EUR, 2021-03-26T20:21:18Z
+--- success: price = 0.05439885402161559
+--- 88 API calls left
+Processing record #40
+--- running price query: TRX/EUR, 2021-03-26T20:23:19Z
+--- success: price = 0.05435344483846955
+--- 88 API calls left
+Processing record #41
+--- running price query: USDT/EUR, 2021-03-26T20:29:46Z
+--- success: price = 0.8489002645782587
+--- 85 API calls left
+Processing record #42
+--- running price query: ADA/EUR, 2021-03-27T00:30:28Z
+--- success: price = 1.0357609264391867
+--- 87 API calls left
+Processing record #43
+--- running price query: USDT/EUR, 2021-03-27T01:38:54Z
+--- success: price = 0.848740029854059
+--- 87 API calls left
+Processing record #44
+--- running price query: ADA/EUR, 2021-03-27T02:04:52Z
+--- success: price = 1.0180065134600984
+--- 86 API calls left
+Processing record #45
+--- running price query: TFUEL/EUR, 2021-03-27T05:29:31Z
+--- success: price = 0.34152944662776463
+--- 84 API calls left
+Processing record #46
+--- running price query: USDT/EUR, 2021-03-27T05:29:47Z
+--- success: price = 0.8495993625181216
+--- 86 API calls left
+Processing record #47
+--- running price query: USDT/EUR, 2021-03-27T12:18:46Z
+--- success: price = 0.8487136059317301
+--- 85 API calls left
+Processing record #48
+--- running price query: USDT/EUR, 2021-03-27T20:56:01Z
+--- success: price = 0.8481403109938604
+--- 84 API calls left
+Processing record #49
+--- running price query: ADA/EUR, 2021-03-28T00:31:25Z
+--- success: price = 0.9920724596419375
+--- 83 API calls left
+Processing record #50
+--- running price query: USDT/EUR, 2021-03-28T01:16:29Z
+--- success: price = 0.84795816905727
+--- 82 API calls left
+Processing record #51
+--- running price query: BTC/EUR, 2021-03-28T01:21:21Z
+--- success: price = 47382.53871761752
+--- 81 API calls left
+Processing record #52
+--- running price query: ADA/EUR, 2021-03-28T01:52:57Z
+--- success: price = 1.0034216905417228
+--- 83 API calls left
+Processing record #53
+--- running price query: ADA/EUR, 2021-03-29T01:18:20Z
+--- success: price = 1.0032926740367394
+--- 85 API calls left
+Processing record #54
+--- running price query: BTC/EUR, 2021-03-29T01:48:40Z
+--- success: price = 46790.671310112535
+--- 84 API calls left
+Processing record #55
+--- running price query: ADA/EUR, 2021-03-29T01:56:22Z
+--- success: price = 1.0033296819598727
+--- 82 API calls left
+Processing record #56
+--- running price query: USDT/EUR, 2021-03-29T02:01:40Z
+--- success: price = 0.8487365441931544
+--- 81 API calls left
+Processing record #57
+--- running price query: USDT/EUR, 2021-03-29T13:08:47Z
+--- success: price = 0.8477164599617574
+--- 80 API calls left
+Processing record #58
+--- running price query: ADA/EUR, 2021-03-30T01:18:26Z
+--- success: price = 1.0161959986195748
+--- 83 API calls left
+Processing record #59
+--- running price query: USDT/EUR, 2021-03-30T01:37:49Z
+--- success: price = 0.8486339382858349
+--- 82 API calls left
+Processing record #60
+--- running price query: ADA/EUR, 2021-03-30T01:41:52Z
+--- success: price = 1.0143384658744659
+--- 81 API calls left
+Processing record #61
+--- running price query: TRX/EUR, 2021-03-30T01:51:06Z
+--- success: price = 0.05473860686338616
+--- 80 API calls left
+Processing record #62
+--- running price query: BTC/EUR, 2021-03-30T02:02:01Z
+--- success: price = 48592.23471979941
+--- 79 API calls left
+Processing record #63
+--- running price query: THETA/EUR, 2021-03-30T06:52:21Z
+--- success: price = 10.958382689955712
+--- 78 API calls left
+Processing record #64
+--- running price query: ADA/EUR, 2021-03-31T01:18:35Z
+--- success: price = 1.0296719055626125
+--- 80 API calls left
+Processing record #65
+--- running price query: USDT/EUR, 2021-03-31T01:43:18Z
+--- success: price = 0.8552979855713478
+--- 79 API calls left
+Processing record #66
+--- running price query: ADA/EUR, 2021-03-31T01:53:43Z
+--- success: price = 1.0301290890490813
+--- 78 API calls left
+Processing record #67
+--- running price query: THETA/EUR, 2021-03-31T01:59:54Z
+--- success: price = 11.093078578910161
+--- 77 API calls left
+Processing record #68
+--- running price query: TRX/EUR, 2021-03-31T02:06:12Z
+--- success: price = 0.05767585941471868
+--- 76 API calls left
+Processing record #69
+--- running price query: BTC/EUR, 2021-03-31T02:09:48Z
+--- success: price = 50213.226993131764
+--- 75 API calls left
+Processing record #70
+--- running price query: TRX/EUR, 2021-03-31T07:55:15Z
+--- success: price = 0.06028724659398722
+--- 79 API calls left
+Processing record #71
+Processing record #72
+--- running price query: USDT/EUR, 2021-03-31T08:38:52Z
+--- success: price = 0.8534163559532102
+--- 78 API calls left
+Processing record #73
+--- running price query: TRX/EUR, 2021-03-31T16:31:19Z
+--- success: price = 0.07208563074165333
+--- 77 API calls left
