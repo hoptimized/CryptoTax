@@ -172,11 +172,18 @@ impl<'a> CapitalGainsCalculation<'a> {
         let out_base_value = out_base_price * out_amount;
 
         // distribute fees, if any
-        let mut partial_fee_amount = None;
-        if let (Some(_), Some(fee_amount)) = (record.fee_asset.clone(), record.fee_amount) {
-            // split fee evenly
-            partial_fee_amount = Some(fee_amount / 2f64);
-        }
+        let (sale_fee_amount, purchase_fee_amount) = match (record.fee_asset.clone(), record.fee_amount) {
+            (Some(fee_asset), Some(fee_amount)) => {
+                if fee_asset == out_asset {
+                    (Some(fee_amount), Some(0f64))
+                } else if fee_asset == record.in_asset {
+                    (Some(0f64), Some(fee_amount))
+                } else {
+                    (Some(fee_amount / 2f64), Some(fee_amount / 2f64))
+                }
+            },
+            _ => (None, None),
+        };
 
         // sell out_asset for base_asset
         self.process_trade_simple(TransactionRecord {
@@ -185,7 +192,7 @@ impl<'a> CapitalGainsCalculation<'a> {
             in_asset: self.base_asset.to_string(),
             in_amount: out_base_value,
             fee_asset: record.fee_asset.clone(),
-            fee_amount: partial_fee_amount,
+            fee_amount: sale_fee_amount,
             ..record.clone()
         });
 
@@ -196,7 +203,7 @@ impl<'a> CapitalGainsCalculation<'a> {
             in_asset: record.in_asset.clone(),
             in_amount: record.in_amount,
             fee_asset: record.fee_asset.clone(),
-            fee_amount: partial_fee_amount,
+            fee_amount: purchase_fee_amount,
             ..record.clone()
         });
     }
