@@ -1,5 +1,16 @@
 # CryptoTax
 
+A small tool that transforms raw crypto transactions into an accounting and reporting friendly format.
+
+The tool currently offers:
+- FIFO and LIFO accounting
+- flexible reporting currency (EUR/USD/etc.)
+- flexible number precision
+- automatic lookup of reference prices via coinapi
+
+Please note that CryptoTax is experimental and has not yet reached version 1. 
+Please do not use the tool for tax reporting.
+
 ## Usage 
 
 ```
