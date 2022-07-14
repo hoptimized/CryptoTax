@@ -105,9 +105,10 @@ impl PriceInformation {
     fn load(&mut self) -> Result<(), Box<dyn error::Error>> {
         self.clear();
 
-        let file = std::fs::File::open(CACHE_FILE_PATH)?;
-        let data = ::serde_yaml::from_reader(file)?;
-        self.price_cache = data;
+        if let Ok(file) = std::fs::File::open(CACHE_FILE_PATH) {
+            let data = ::serde_yaml::from_reader(file)?;
+            self.price_cache = data;
+        }
 
         Ok(())
     }
